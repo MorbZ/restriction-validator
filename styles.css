@@ -14,7 +14,7 @@ div.map {
 .marker-cluster {
 	background-clip: padding-box;
 	border-radius: 10px;
-	background-color: #d70;
+	background-color: white;
 }
 .marker-cluster div {
 	background-color: orange;
