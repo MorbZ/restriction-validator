@@ -17,12 +17,19 @@ $(document).ready(function() {
 		'no_exit'
 	];
 
+	// Colors
+	var colors = {
+		normal: 'white',
+		only: '#0f0',
+		no: 'red'
+	};
+
 	/* Map */
 	// Create map
 	var map = new L.Map('map');
 	map.on('moveend', function(e) {
 		// TODO: Enable autoload
-		//loadFeatures();
+        orderLayers()
 	});
 
 	// Add OSM layer
@@ -35,10 +42,15 @@ $(document).ready(function() {
 	var overlay = L.tileLayer('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEAAQAAAAB0CZXLAAAAH0lEQVR4Ae3BAQEAAAgCoP6v7kYpMAAAAAAAAAAAzy0hAAABhF/yqwAAAABJRU5ErkJggg==', {opacity: 0.5, minZoom: 1, maxZoom: 19});
 	map.addLayer(overlay);
 
-	// Add line groups
+	/* Add line groups
+	0=Oneway arrows
+	1=Restriction arrows
+	2=Default Line
+	3=Restriction Line/dashed line
+	4=Via node */
 	var groups = [];
-	for(var i = 0; i < 3; i++) {
-		groups.push(L.layerGroup().addTo(map));
+	for(var i = 0; i < 5; i++) {
+        groups.push(L.layerGroup().addTo(map));
 	}
 
 	// Add marker group
@@ -238,24 +250,48 @@ $(document).ready(function() {
 			drawVia(via);
 		});
 
-		// Order the groups z-index (bringToFront() doesn't work here for some reason)
+        // Order layers
+        orderLayers();
+	}
+
+    // Order the groups z-index (bringToFront() doesn't work here for some reason)
+    function orderLayers() {
 		for(var i = 0; i < groups.length; i++) {
 			map.removeLayer(groups[i]);
-			map.addLayer(groups[i]);
+			if(!(map.getZoom() < 17 && i <= 1)) { // Don't show arrows at low zoom levels
+				map.addLayer(groups[i]);
+			}
 		}
-	}
+    }
 
 	// Splits a way at a given node and shortens it. All ways start at the via node.
 	function splitWay(way, pos) {
+        // Get oneway
+        var oneway = 0;
+        if(way.tags.oneway != undefined) {
+            switch(way.tags.oneway) {
+                case "yes":
+                case "1":
+                    oneway = 1;
+                    break;
+                case "-1":
+                    oneway = -1;
+                    break;
+            }
+        }
+
 		var wayParts = [];
 		if(pos != 0) {
 			// Left split
-			var wayPart = getWayPart(way, 0, pos + 1, true);
+            var wayNodes = getWayPart(way, 0, pos + 1, true);
+            var tempOneway = oneway == 0 ? 0 : -oneway;
+			var wayPart = { id: way.id, nodes: wayNodes, oneway: tempOneway };
 			wayParts.push(wayPart);
 		}
 		if(pos != way.nodes.length - 1) {
 			// Right split
-			var wayPart = getWayPart(way, pos, way.nodes.length, false);
+			var wayNodes = getWayPart(way, pos, way.nodes.length, false);
+            var wayPart = { id: way.id, nodes: wayNodes, oneway: oneway };
 			wayParts.push(wayPart);
 		}
 		return wayParts;
@@ -304,27 +340,33 @@ $(document).ready(function() {
 				}
 			}
 		}
-		return { id: way.id, nodes: wayNodes2 };
+		return wayNodes2;
 	}
 
 	function drawVia(via) {
 		// Draw ways
 		$.each(via.ways, function(i, way) {
-			// Count restrictions of which it is part of
+			// Get restrictions of which it is part of
 			var isNo = false;
 			var isOnly = false;
-			var num = 0;
+            var roles = [];
 			for(var i = 0; i < via.restrictions.length; i++) {
 				var restriction = via.restrictions[i];
 				for(var j = 0; j < restriction.members.length; j++) {
 					if(restriction.members[j].way_ref == way.id) {
-						if(restriction.type.startsWith('no_')) {
+                        // Restriction type
+                        var type = restriction.type.split('_')[0];
+						if(type == 'no') {
 							isNo = true;
-						}
-						else if(restriction.type.startsWith('only_')) {
+						} else if(type == 'only') {
 							isOnly = true;
 						}
-						num++;
+
+                        // Add to roles
+                        roles.push({
+                            type: type,
+                            role: restriction.members[j].type
+                        });
 						break;
 					}
 				}
@@ -336,44 +378,77 @@ $(document).ready(function() {
 				clickable: false
 			};
 
-			if(num == 0) {
-				options.color = 'white';
+			if(roles.length == 0) {
+				options.color = colors.normal;
 				options.weight = 2;
 			} else {
 				options.weight = 3;
 				if(isOnly) {
-					options.color = '#0f0';
+					options.color = colors.only;
 				} else { // if(isNo)
-					options.color = 'red';
+					options.color = colors.no;
 				}
 			}
 
 			// Draw line
+			var groupId = roles.length == 0 ? 2 : 3;
 			var polyline = L.polyline(way.nodes, options);
-			if(num == 0) {
-				groups[0].addLayer(polyline);
-			} else {
-				groups[1].addLayer(polyline);
+			groups[groupId].addLayer(polyline);
+
+			// Add oneway arrows
+			if(way.oneway != 0) {
+                var direction = way.oneway == 1 ? 'forward' : 'backward';
+                addArrows(polyline, colors.normal, 'both', direction, 0, 1.5);
 			}
+
+            // Add resctriction arrows
+            $.each(roles, function(i, role) {
+                var color = role.type == 'only' ? colors.only : colors.no;
+                var direction = role.role == 'to' ? 'forward' : 'backward';
+                var side = way.oneway == 0 ? 'right' : 'both';
+                addArrows(polyline, color, side, direction, 1, 2.5);
+            });
 
 			// Draw dashed line
 			if(isOnly && isNo) {
-				options.color = 'red';
+				options.color = colors.no;
 				options.dashArray = [5, 5];
 				options.lineCap = 'butt';
 				var polyline = L.polyline(way.nodes, options);
-				groups[1].addLayer(polyline);
+				groups[3].addLayer(polyline);
 			}
 		});
 
 		// Draw via node
-		groups[2].addLayer(L.circleMarker(via.via, {
+		groups[4].addLayer(L.circleMarker(via.via, {
 			fillColor: 'black',
 			weight: 0,
 			fillOpacity: 0.8,
 			clickable: false
 		}).setRadius(3));
 	}
+
+    function addArrows(polyline, color, side, direction, layer, weight) {
+        var decorator = L.polylineDecorator(polyline, {
+            patterns: [{
+                offset: 10,
+                endOffset: 0,
+                repeat: 10,
+                symbol: L.Symbol.arrowHead({
+					pixelSize: 10,
+                    side: side,
+                    direction: direction,
+                    pathOptions: {
+                        weight: weight,
+            			fillOpacity: 0,
+            			opacity: 1,
+            			color: color
+                    }
+                }),
+            }]
+        });
+        groups[layer].addLayer(decorator);
+    }
 
 	function showError(latlon, elem, msg, warning) {
 		// Make link
