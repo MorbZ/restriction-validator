@@ -29,7 +29,6 @@ $(document).ready(function() {
 	var map = new L.Map('map');
 	map.on('moveend', function(e) {
 		// TODO: Enable autoload
-        orderLayers()
 	});
 
 	// Add OSM layer
@@ -69,7 +68,7 @@ $(document).ready(function() {
 		var bbox = +coords.getSouthEast().lat+','+coords.getNorthWest().lng+','+coords.getNorthWest().lat+','+coords.getSouthEast().lng;
 		var request = '[out:json][timeout:25];(relation["type"="restriction"](' + bbox + ');node(r);way(bn)["highway"]["highway"~"^motorway|^trunk|^primary|^secondary|^tertiary|living_street|unclassified|residential|service|road"];);out body;>;out body;';
 		console.log(request);
-		var url = 'http://overpass-api.de/api/interpreter?data=' + encodeURIComponent(request);
+		var url = 'http://overpass.osm.rambler.ru/cgi/interpreter?data=' + encodeURIComponent(request);
 
 		$.ajax({
 			url: url,
@@ -82,35 +81,35 @@ $(document).ready(function() {
 	// Parse Overpass result
 	var nodes, ways, relations;
 	function parseOSM(data) {
-		console.log("Success");
+		console.log('Success');
 
 		nodes = [];
 		ways = [];
 		relations = [];
 
-		$.each(data.elements, function(i, elem) {
+		$.each(data.elements, function(none, elem) {
 			var id = elem.id;
 			switch(elem.type) {
-				case "node":
+				case 'node':
 					nodes[id] = elem;
 					break;
-				case "way":
+				case 'way':
 					ways[id] = elem;
 					break;
-				case "relation":
+				case 'relation':
 					relations[id] = elem;
 					break;
 			}
 		});
 
 		// Clear layers
-		for(var i = 0; i < groups.length; i++) {
-			groups[i].clearLayers();
-		}
+		$.each(groups, function(none, group) {
+			group.clearLayers();
+		});
 
 		// Iterate restrictions
 		var vias = [];
-		$.each(getElemList(relations, false), function(i, rel) {
+		$.each(getElemList(relations, false), function(none, rel) {
 			var via = [];
 			var members = [];
 			var nFrom = 0;
@@ -118,26 +117,25 @@ $(document).ready(function() {
 			var nUnknown = 0;
 
 			// Get roles
-			for(var i = 0; i < rel.members.length; i++) {
-				member = rel.members[i];
-				if(member.role == "via") {
-					if(member.type == "node") {
+			$.each(rel.members, function(none, member) {
+				if(member.role == 'via') {
+					if(member.type == 'node') {
 						via.push(nodes[member.ref]);
 					} else {
 						// We don't handle via ways/relations
 						return;
 					}
-				} else if(member.type == "way" && member.role == "from") {
+				} else if(member.type == 'way' && member.role == 'from') {
 					nFrom++;
-					members.push({ type: "from", way_ref: member.ref });
-				} else if(member.type == "way" && member.role == "to") {
+					members.push({ type: 'from', way_ref: member.ref });
+				} else if(member.type == 'way' && member.role == 'to') {
 					nTo++;
-					members.push({ type: "to", way_ref: member.ref });
-				} else if(member.type == "node" && member.role == "location_hint") {
+					members.push({ type: 'to', way_ref: member.ref });
+				} else if(member.type == 'node' && member.role == 'location_hint') {
 				} else {
 					nUnknown++;
 				}
-    		};
+    		});
 
 			/* Check via */
 			// No via found, we can't show an error, because we have no coordinate and there can be a "via"-way
@@ -147,7 +145,7 @@ $(document).ready(function() {
 
 			// Multiple vias, found but only 1 node is allowed
 			if(via.length > 1) {
-				$.each(via, function(i, tempVia) {
+				$.each(via, function(none, tempVia) {
 					showError([tempVia.lat, tempVia.lon], rel, 'There are multiple "via"-nodes', false);
 				});
 				return;
@@ -168,12 +166,13 @@ $(document).ready(function() {
 				return;
 			}
 			var type = rel.tags.restriction;
+			var access = type.split('_')[0]; // no/only
 
 			// Check if restriction type is valid
 			if($.inArray(type, restrictionTypes) == -1) {
 				// Because only the start is relavant ("no_"/"only_") we will continue if one of them is given
 				var warning = false;
-				if(type.startsWith('no_') || type.startsWith('only_')) {
+				if(access == 'no' || access == 'only') {
 					warning = true;
 				}
 
@@ -195,10 +194,10 @@ $(document).ready(function() {
 			}
 
 			// Multiple members (no return here as multiple types can be handled)
-			if(nFrom > 1 && type != "no_entry") {
+			if(nFrom > 1 && type != 'no_entry') {
 				showError([via.lat, via.lon], rel, 'More than 1 "from"-members, but restriction is not "no_entry"', true);
 			}
-			if(nTo > 1 && type != "no_entry") {
+			if(nTo > 1 && type != 'no_entry') {
 				showError([via.lat, via.lon], rel, 'More than 1 "to"-members, but restriction is not "no_exit"', true);
 			}
 
@@ -218,8 +217,12 @@ $(document).ready(function() {
 
 			// Add to vias
 			var restriction = {
+				id: rel.id,
 				type: type,
-				members: members
+				access: access,
+				members: members,
+				nTo: nTo,
+				nFrom: nFrom
 			};
 			if(vias[via.id] == undefined) {
 				vias[via.id] = {
@@ -233,21 +236,42 @@ $(document).ready(function() {
 		});
 
 		// Add connected ways to via
-		$.each(getElemList(ways), function(i, way) {
+		$.each(getElemList(ways), function(none, way) {
 			if(way.tags != undefined && way.tags.highway != undefined) {
-				for(var i = 0; i < way.nodes.length; i++) {
-					var node_ref = way.nodes[i];
+				$.each(way.nodes, function(i, node_ref) {
 					if(vias[node_ref] != undefined) {
 						var splitWays = splitWay(way, i);
 						vias[node_ref].ways = vias[node_ref].ways.concat(splitWays);
 					}
-				};
+				});
 			}
 		});
 
-		// Draw restrictions
-		$.each(getElemList(vias), function(i, via) {
+		// Add oneway to restriction members
+		$.each(getElemList(vias, true), function(none, node_ref) {
+			var via = vias[node_ref];
+			$.each(via.restrictions, function(i, rel) {
+				$.each(rel.members, function(j, member) {
+					// Get way
+					for(var k = 0; k < via.ways.length; k++) {
+						var way = via.ways[k];
+						if(member.way_ref == way.id) {
+							vias[node_ref].restrictions[i].members[j].oneway = way.oneway;
+							break;
+						}
+					}
+				});
+			});
+		});
+
+		// Draw vias
+		$.each(getElemList(vias), function(none, via) {
 			drawVia(via);
+		});
+
+		// Check vias
+		$.each(getElemList(vias), function(none, via) {
+			checkVia(via);
 		});
 
         // Order layers
@@ -256,29 +280,27 @@ $(document).ready(function() {
 
     // Order the groups z-index (bringToFront() doesn't work here for some reason)
     function orderLayers() {
-		for(var i = 0; i < groups.length; i++) {
-			map.removeLayer(groups[i]);
-			if(!(map.getZoom() < 17 && i <= 1)) { // Don't show arrows at low zoom levels
-				map.addLayer(groups[i]);
-			}
-		}
+		$.each(groups, function(none, group) {
+			map.removeLayer(group);
+			map.addLayer(group);
+		});
     }
 
 	// Splits a way at a given node and shortens it. All ways start at the via node.
 	function splitWay(way, pos) {
-        // Get oneway
-        var oneway = 0;
-        if(way.tags.oneway != undefined) {
-            switch(way.tags.oneway) {
-                case "yes":
-                case "1":
-                    oneway = 1;
-                    break;
-                case "-1":
-                    oneway = -1;
-                    break;
-            }
-        }
+		// Get oneway
+		var oneway = 0;
+		if(way.tags.oneway != undefined) {
+			switch(way.tags.oneway) {
+				case 'yes':
+				case '1':
+					oneway = 1;
+					break;
+				case '-1':
+					oneway = -1;
+					break;
+			}
+		}
 
 		var wayParts = [];
 		if(pos != 0) {
@@ -302,7 +324,7 @@ $(document).ready(function() {
 		// Slice and add node positions
 		var nodeRefs = way.nodes.slice(start, end);
 		var wayNodes = [];
-		$.each(nodeRefs, function(i, node_ref) {
+		$.each(nodeRefs, function(none, node_ref) {
 			var node = nodes[node_ref];
 			wayNodes.push({
 				lat: node.lat,
@@ -345,32 +367,31 @@ $(document).ready(function() {
 
 	function drawVia(via) {
 		// Draw ways
-		$.each(via.ways, function(i, way) {
+		$.each(via.ways, function(none, way) {
 			// Get restrictions of which it is part of
 			var isNo = false;
 			var isOnly = false;
             var roles = [];
-			for(var i = 0; i < via.restrictions.length; i++) {
-				var restriction = via.restrictions[i];
-				for(var j = 0; j < restriction.members.length; j++) {
-					if(restriction.members[j].way_ref == way.id) {
+			$.each(via.restrictions, function(none, restriction) {
+				for(var i = 0; i < restriction.members.length; i++) {
+					if(restriction.members[i].way_ref == way.id) {
                         // Restriction type
-                        var type = restriction.type.split('_')[0];
-						if(type == 'no') {
+						var access = restriction.access;
+						if(access == 'no') {
 							isNo = true;
-						} else if(type == 'only') {
+						} else if(access == 'only') {
 							isOnly = true;
 						}
 
                         // Add to roles
                         roles.push({
-                            type: type,
-                            role: restriction.members[j].type
+                            access: access,
+                            role: restriction.members[i].type
                         });
 						break;
 					}
 				}
-			}
+			});
 
 			// Set line properties
 			var options = {
@@ -402,8 +423,8 @@ $(document).ready(function() {
 			}
 
             // Add resctriction arrows
-            $.each(roles, function(i, role) {
-                var color = role.type == 'only' ? colors.only : colors.no;
+            $.each(roles, function(none, role) {
+                var color = role.access == 'only' ? colors.only : colors.no;
                 var direction = role.role == 'to' ? 'forward' : 'backward';
                 var side = way.oneway == 0 ? 'right' : 'both';
                 addArrows(polyline, color, side, direction, 1, 2.5);
@@ -429,13 +450,15 @@ $(document).ready(function() {
 	}
 
     function addArrows(polyline, color, side, direction, layer, weight) {
+		// Calculate arrow size based on zoom level
+		var zoomFactor = Math.pow(2, map.getZoom() - 14);
         var decorator = L.polylineDecorator(polyline, {
             patterns: [{
-                offset: 10,
+                offset: zoomFactor,
                 endOffset: 0,
-                repeat: 10,
+                repeat: zoomFactor / 4 * 3,
                 symbol: L.Symbol.arrowHead({
-					pixelSize: 10,
+					pixelSize: zoomFactor / 2,
                     side: side,
                     direction: direction,
                     pathOptions: {
@@ -450,14 +473,62 @@ $(document).ready(function() {
         groups[layer].addLayer(decorator);
     }
 
+	function checkVia(via) {
+		// Check wrong direction of to/from members
+		var isValid = true;
+		$.each(via.restrictions, function(none, rel) {
+			$.each(rel.members, function(none, member) {
+				var type = member.type
+				var way_ref = member.way_ref;
+
+				// Check direction
+				if((type == 'to' && member.oneway == -1) ||
+					(type == 'from' && member.oneway == 1)
+				) {
+					showError(via.via, relations[rel.id], 'The "' + type + '"-member is a one-way street that goes in the wrong direction', false);
+					isValid = false;
+				}
+			});
+		});
+		if(!isValid) {
+			return;
+		}
+
+		/* Check for unnecessary restrictions */
+		// There is no need for a necessary check on "No"-restrictions
+		// Count accessible ways
+		var nAccess = 0;
+		$.each(via.ways, function(none, way) {
+			if(way.oneway != -1) {
+				nAccess++;
+			}
+		});
+
+		$.each(via.restrictions, function(none, rel) {
+			// If there is no oneway-from we reduce accessible ways
+			var tempNAccess = nAccess - 1;
+			for(var i = 0; i < rel.members.length; i++) {
+				var member = rel.members[i];
+				if(member.type == 'from' && member.oneway == -1) {
+					tempNAccess++;
+					break;
+				}
+			};
+
+			if(rel.access == 'only' && tempNAccess == rel.nTo) {
+				showError(via.via, relations[rel.id], 'Unnecessary restriction: There is no other turn possibility', true);
+			}
+		});
+	}
+
 	function showError(latlon, elem, msg, warning) {
 		// Make link
 		var url = '';
 		var type = '';
 		switch(elem.type) {
-			case "relation":
-				type = "Relation";
-				url = "http://www.openstreetmap.org/relation/" + elem.id;
+			case 'relation':
+				type = 'Relation';
+				url = 'http://www.openstreetmap.org/relation/' + elem.id;
 				break;
 		}
 
