@@ -31,6 +31,12 @@ $(document).ready(function() {
 		// TODO: Enable autoload
 	});
 
+	// Add locate control
+	L.control.locate({
+		drawCircle: false,
+		keepCurrentZoomLevel: true
+	}).addTo(map);
+
 	// Add OSM layer
 	var osmUrl = 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 	var osmAttrib= 'Map data © <a href="http://openstreetmap.org">OpenStreetMap</a> contributors';
