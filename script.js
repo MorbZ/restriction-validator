@@ -532,11 +532,12 @@ $(document).ready(function() {
 		// There is no need for a necessary check on "No"-restrictions
 		// Get accessible ways
 		var accessibles = [];
-		$.each(via.ways, function(none, way) {
+		$.each(via.ways, function(i, way) {
 			if(way.oneway != -1) {
 				accessibles.push({
 					way_ref: way.id,
-					access: false
+					access: false,
+					index: i
 				});
 			}
 		});
@@ -559,7 +560,7 @@ $(document).ready(function() {
 
 		/* Check for blocking restrictions */
 		// If there is at least 1 incoming way that is not a "from"-member in a restriction, all other ways are accessible
-		$.each(via.ways, function(none, way) {
+		$.each(via.ways, function(index, way) {
 			if(way.oneway != 1) {
 				var isFromMember = false;
 				var assocs = getRestrictionAssocs(way.id, via.restrictions);
@@ -573,7 +574,8 @@ $(document).ready(function() {
 				// Mark all other ways as accessible
 				if(!isFromMember) {
 					$.each(accessibles, function(i, acc) {
-						if(acc.way_ref != way.id) {
+						// We can't use way id here as the way could be splitted
+						if(acc.index != index) {
 							accessibles[i].access = true;
 						}
 					});
