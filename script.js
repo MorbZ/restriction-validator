@@ -25,10 +25,26 @@ $(document).ready(function() {
 	};
 
 	/* Map */
+	// Restore location cookie
+	var options = Cookies.getJSON('location');
+	if(options == undefined) {
+		options = {
+			center: [52.45, 13.35],
+			zoom: 14
+		};
+	}
+
 	// Create map
-	var map = new L.Map('map');
+	var map = new L.Map('map', options);
 	map.on('moveend', function(e) {
 		// TODO: Enable autoload
+		// Update location cookie
+		Cookies.set('location', {
+			center: map.getCenter(),
+			zoom: map.getZoom()
+		}, {
+			expires: 365
+		});
 	});
 
 	// Add locate control
@@ -63,7 +79,6 @@ $(document).ready(function() {
 		maxClusterRadius: 20
 	}).addTo(map);
 	groups.push(markerGroup);
-	map.setView(new L.LatLng(52.45, 13.35), 14); // TODO: Detect user location
 
 	// Trigger loading
 	$('#load').click(function() {
