@@ -53,7 +53,9 @@ $(document).ready(function() {
 	}
 
 	// Add marker group
-	var markerGroup = L.markerClusterGroup().addTo(map);
+	var markerGroup = L.markerClusterGroup({
+		maxClusterRadius: 20
+	}).addTo(map);
 	groups.push(markerGroup);
 	map.setView(new L.LatLng(52.45, 13.35), 14); // TODO: Detect user location
 
@@ -117,7 +119,8 @@ $(document).ready(function() {
 			var nUnknown = 0;
 
 			// Get roles
-			$.each(rel.members, function(none, member) {
+			for(var i = 0; i < rel.members.length; i++) {
+				var member = rel.members[i];
 				if(member.role == 'via') {
 					if(member.type == 'node') {
 						via.push(nodes[member.ref]);
@@ -135,7 +138,7 @@ $(document).ready(function() {
 				} else {
 					nUnknown++;
 				}
-    		});
+    		}
 
 			/* Check via */
 			// No via found, we can't show an error, because we have no coordinate and there can be a "via"-way
@@ -372,25 +375,20 @@ $(document).ready(function() {
 			var isNo = false;
 			var isOnly = false;
             var roles = [];
-			$.each(via.restrictions, function(none, restriction) {
-				for(var i = 0; i < restriction.members.length; i++) {
-					if(restriction.members[i].way_ref == way.id) {
-                        // Restriction type
-						var access = restriction.access;
-						if(access == 'no') {
-							isNo = true;
-						} else if(access == 'only') {
-							isOnly = true;
-						}
-
-                        // Add to roles
-                        roles.push({
-                            access: access,
-                            role: restriction.members[i].type
-                        });
-						break;
-					}
+			$.each(getRestrictionAssocs(way.id, via.restrictions), function(none, assoc) {
+                // Restriction type
+				var access = assoc.restriction.access;
+				if(access == 'no') {
+					isNo = true;
+				} else if(access == 'only') {
+					isOnly = true;
 				}
+
+                // Add to roles
+                roles.push({
+                    access: access,
+                    role: assoc.member.type
+                });
 			});
 
 			// Set line properties
@@ -449,6 +447,21 @@ $(document).ready(function() {
 		}).setRadius(3));
 	}
 
+	function getRestrictionAssocs(way_ref, restrictions) {
+		var assocs = [];
+		$.each(restrictions, function(none, restriction) {
+			$.each(restriction.members, function(none, member) {
+				if(member.way_ref == way_ref) {
+					assocs.push({
+						restriction: restriction,
+						member: member
+					});
+				}
+			});
+		});
+		return assocs;
+	}
+
     function addArrows(polyline, color, side, direction, layer, weight) {
 		// Calculate arrow size based on zoom level
 		var zoomFactor = Math.pow(2, map.getZoom() - 14);
@@ -496,29 +509,83 @@ $(document).ready(function() {
 
 		/* Check for unnecessary restrictions */
 		// There is no need for a necessary check on "No"-restrictions
-		// Count accessible ways
-		var nAccess = 0;
+		// Get accessible ways
+		var accessibles = [];
 		$.each(via.ways, function(none, way) {
 			if(way.oneway != -1) {
-				nAccess++;
+				accessibles.push({
+					way_ref: way.id,
+					access: false
+				});
 			}
 		});
 
 		$.each(via.restrictions, function(none, rel) {
 			// If there is no oneway-from we reduce accessible ways
-			var tempNAccess = nAccess - 1;
+			var nAccess = accessibles.length - 1;
 			for(var i = 0; i < rel.members.length; i++) {
 				var member = rel.members[i];
 				if(member.type == 'from' && member.oneway == -1) {
-					tempNAccess++;
+					nAccess++;
 					break;
 				}
 			};
 
-			if(rel.access == 'only' && tempNAccess == rel.nTo) {
+			if(rel.access == 'only' && nAccess == rel.nTo) {
 				showError(via.via, relations[rel.id], 'Unnecessary restriction: There is no other turn possibility', true);
 			}
 		});
+
+		/* Check for blocking restrictions */
+		// If there is at least 1 incoming way that is not a "from"-member in a restriction, all other ways are accessible
+		$.each(via.ways, function(none, way) {
+			if(way.oneway != 1) {
+				var isFromMember = false;
+				var assocs = getRestrictionAssocs(way.id, via.restrictions);
+				for(var i = 0; i < assocs.length; i++) {
+					if(assocs[i].member.type == "from") {
+						isFromMember = true;
+						break;
+					}
+				}
+
+				// Mark all other ways as accessible
+				if(!isFromMember) {
+					$.each(accessibles, function(i, acc) {
+						if(acc.way_ref != way.id) {
+							accessibles[i].access = true;
+						}
+					});
+				}
+			}
+		});
+
+		// Go through all restrictions and mark ways that are accessible
+		$.each(via.restrictions, function(none, rel) {
+			// Get to-members
+			var toMembers = [];
+			$.each(rel.members, function(none, member) {
+				if(member.type == "to") {
+					toMembers[member.way_ref] = true;
+				}
+			});
+
+			// Update accessibles
+			$.each(accessibles, function(i, acc) {
+				if((toMembers[acc.way_ref] != undefined && rel.access == 'only') ||
+					(toMembers[acc.way_ref] == undefined && rel.access == 'no')) {
+					accessibles[i].access = true;
+				}
+			});
+		});
+
+		// Check if there are inaccessible ways
+		for(var i = 0; i < accessibles.length; i++) {
+			if(!accessibles[i].access) {
+				showError(via.via, via.via, 'The restrictions at this node make a street inaccessible. Consider using "oneway" or "access=no" instead of restrictions.', false);
+				return;
+			}
+		}
 	}
 
 	function showError(latlon, elem, msg, warning) {
@@ -526,6 +593,10 @@ $(document).ready(function() {
 		var url = '';
 		var type = '';
 		switch(elem.type) {
+			case 'node':
+				type = 'Node';
+				url = 'http://www.openstreetmap.org/node/' + elem.id;
+				break;
 			case 'relation':
 				type = 'Relation';
 				url = 'http://www.openstreetmap.org/relation/' + elem.id;
