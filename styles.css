@@ -5,6 +5,38 @@ body {
 	font-family: Verdana, Arial, sans-serif;
 }
 
+div.header {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 0;
+	height: 40px;
+	background-color: #333;
+	padding: 0 10px;
+	padding-top: 4px;
+}
+
+div.header > span.title {
+	color: white;
+	font-size: 1.4em;
+	font-variant: small-caps;
+}
+
+div.header > a {
+	margin-top: 6px;
+	float: right;
+	color: white;
+	font-size: 0.9em;
+}
+
+div.map-container {
+	position: absolute;
+	top: 40px;
+	bottom: 0;
+	left: 0;
+	right: 0;
+}
+
 div.map {
 	padding: 0;
 	margin: 0;

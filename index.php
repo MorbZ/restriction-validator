@@ -14,11 +14,17 @@
 		<script src="lib/leaflet-locatecontrol/dist/L.Control.Locate.min.js"></script>
 	</head>
 	<body>
-		<div class="map" id="map"></div>
-		<div class="zoom-hint">
-			<span>Please zoom in to load data</span>
+		<div class="header">
+			<span class="title">OSM Restriction Validator</span>
+			<a href="https://github.com/MorbZ/restriction-validator" target="_blank">Github</a>
 		</div>
-		<div class="spinner" id="spinner"></div>
+		<div class="map-container">
+			<div class="map" id="map"></div>
+			<div class="zoom-hint">
+				<span>Please zoom in to load data</span>
+			</div>
+			<div class="spinner" id="spinner"></div>
+		</div>
 		<script src="script.js"></script>
 	</body>
 </html>
