@@ -3,6 +3,7 @@ body {
 	padding: 0;
 	position: relative;
 	font-family: Verdana, Arial, sans-serif;
+	background-color: #333;
 }
 
 div.header {
@@ -11,7 +12,6 @@ div.header {
 	right: 0;
 	top: 0;
 	height: 40px;
-	background-color: #333;
 	padding: 0 10px;
 	padding-top: 4px;
 }
@@ -22,9 +22,13 @@ div.header > span.title {
 	font-variant: small-caps;
 }
 
-div.header > a {
-	margin-top: 6px;
+div.menu {
+	padding-top: 6px;
 	float: right;
+	display: inline;
+}
+
+div.menu > a {
 	color: white;
 	font-size: 0.9em;
 }
@@ -55,7 +59,8 @@ div.zoom-hint {
 	text-align: center;
 }
 
-div.zoom-hint > span {
+div.zoom-hint > div {
+	display: inline-block;
 	background-color: rgba(255, 255, 255, 0.5);
 	padding: 5px;
 	border-radius: 5px;
@@ -65,6 +70,36 @@ div.spinner {
 	position: absolute;
 	top: 25px;
 	right: 25px;
+}
+
+@media (max-width: 529px) {
+	div.map-container {
+		top: 70px;
+	}
+
+	div.header {
+		height: 70px;
+	}
+
+	div.header > span.title {
+		display: block;
+		width: 100%;
+		text-align: center;
+	}
+
+	div.menu {
+		float: none;
+		display: block;
+		text-align: center;
+	}
+
+	div.menu > a {
+		font-size: 1em;
+	}
+
+	.leaflet-popup-content {
+		font-size: 1.2em;
+	}
 }
 
 .leaflet-popup-content-wrapper {

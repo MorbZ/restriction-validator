@@ -1,6 +1,7 @@
 <html>
 	<head>
 		<title>Restrictions</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 		<link rel="stylesheet" href="lib/Font-Awesome/css/font-awesome.min.css">
 		<link rel="stylesheet" href="lib/leaflet-0.7.5/leaflet.css" />
 		<link rel="stylesheet" href="lib/leaflet-locatecontrol/dist/L.Control.Locate.min.css" />
@@ -16,12 +17,14 @@
 	<body>
 		<div class="header">
 			<span class="title">OSM Restriction Validator</span>
-			<a href="https://github.com/MorbZ/restriction-validator" target="_blank">Github</a>
+			<div class="menu">
+				<a href="https://github.com/MorbZ/restriction-validator" target="_blank">Github</a>
+			</div>
 		</div>
 		<div class="map-container">
 			<div class="map" id="map"></div>
 			<div class="zoom-hint">
-				<span>Please zoom in to load data</span>
+				<div>Please zoom in to load data</div>
 			</div>
 			<div class="spinner" id="spinner"></div>
 		</div>
