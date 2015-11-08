@@ -76,11 +76,6 @@ $(document).ready(function() {
 	}).addTo(map);
 	groups.push(markerGroup);
 
-	// Trigger loading
-	$('#load').click(function() {
-		loadFeatures();
-	});
-
 	function updateMap() {
 		// Update zoom hint
 		if(map.getZoom() < minLoadingZoom) {
