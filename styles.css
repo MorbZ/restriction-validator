@@ -67,6 +67,19 @@ div.spinner {
 	right: 25px;
 }
 
+.leaflet-popup-content-wrapper {
+	border-radius: 5px;
+	box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.leaflet-popup-content {
+	margin: 8px;
+}
+
+.leaflet-popup-tip {
+	box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
+}
+
 div.leaflet-control-locate > a > span {
 	margin-top: 5px;
 }
