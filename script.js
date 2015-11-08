@@ -4,6 +4,8 @@
 */
 
 $(document).ready(function() {
+	var minLoadingZoom = 15;
+
 	// Restriction types
 	var restrictionTypes = [
 		'no_right_turn',
@@ -36,19 +38,10 @@ $(document).ready(function() {
 
 	// Create map
 	var map = new L.Map('map', options);
-	map.on('moveend', function(e) {
-		// Load data
-		loadFeatures();
-
-		// Update location cookie
-		Cookies.set('location', {
-			center: map.getCenter(),
-			zoom: map.getZoom()
-		}, {
-			expires: 365
-		});
+	map.on('moveend', function() {
+		updateMap();
 	});
-	loadFeatures();
+	updateMap();
 
 	// Add locate control
 	L.control.locate({
@@ -88,12 +81,32 @@ $(document).ready(function() {
 		loadFeatures();
 	});
 
+	function updateMap() {
+		// Update zoom hint
+		if(map.getZoom() < minLoadingZoom) {
+			$('.zoom-hint').show();
+		} else {
+			$('.zoom-hint').hide();
+		}
+
+		// Load data
+		loadFeatures();
+
+		// Update location cookie
+		Cookies.set('location', {
+			center: map.getCenter(),
+			zoom: map.getZoom()
+		}, {
+			expires: 365
+		});
+	}
+
 	// Starte Overpass request
 	var loadedBbox, loadingBbox;
 	var ajax;
 	function loadFeatures() {
 		// Check zoom
-		if(map.getZoom() <= 14) {
+		if(map.getZoom() < minLoadingZoom) {
 			return;
 		}
 

@@ -14,6 +14,9 @@
 	</head>
 	<body>
 		<div class="map" id="map"></div>
+		<div class="zoom-hint">
+			<span>Please zoom in to load data</span>
+		</div>
 		<input type="button" id="load" value="Load" style="right: 10px; top: 10px; position:absolute;" />
 		<script src="script.js"></script>
 	</body>
