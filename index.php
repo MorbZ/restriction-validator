@@ -1,7 +1,9 @@
 <html>
 	<head>
-		<title>Restrictions</title>
+		<title>Restriction Validator</title>
+		<meta name="description" content="Shows OpenStreetMap restrictions and analyses them to find incorrect or unnecessary restrictions.">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
 		<link rel="stylesheet" href="lib/Font-Awesome/css/font-awesome.min.css">
 		<link rel="stylesheet" href="lib/leaflet-0.7.5/leaflet.css" />
 		<link rel="stylesheet" href="lib/leaflet-locatecontrol/dist/L.Control.Locate.min.css" />
