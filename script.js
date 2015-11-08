@@ -26,6 +26,22 @@ $(document).ready(function() {
 		no: 'red'
 	};
 
+	/* Spinner */
+	var spinner = new Spinner({
+		color:'#fff',
+		lines: 12,
+		width: 3,
+		radius: 7
+	});
+
+	function startSpinner() {
+		spinner.spin(document.getElementById('spinner'));
+	}
+
+	function stopSpinner() {
+		spinner.stop();
+	}
+
 	/* Map */
 	// Restore location cookie
 	var options = Cookies.getJSON('location');
@@ -127,6 +143,7 @@ $(document).ready(function() {
 		}
 
 		// Load
+		startSpinner();
 		loadingBbox = bbox2;
 		var coords = bbox2.getSouthEast().lat+','+bbox2.getNorthWest().lng+','+bbox2.getNorthWest().lat+','+bbox2.getSouthEast().lng;
 		var request = '[out:json][timeout:25];(relation["type"="restriction"](' + coords + ');node(r);way(bn)["highway"]["highway"~"^motorway|^trunk|^primary|^secondary|^tertiary|living_street|unclassified|residential|service|road"];);out body;>;out body;';
@@ -142,6 +159,7 @@ $(document).ready(function() {
 	}
 
 	function cancelLoading() {
+		stopSpinner();
 		if(ajax != undefined && ajax) {
 			ajax.abort();
 			ajax = null;
@@ -153,6 +171,7 @@ $(document).ready(function() {
 	var nodes, ways, relations;
 	function parseOSM(data) {
 		console.log('Success');
+		stopSpinner();
 
 		// Update bboxes
 		ajax = null;
