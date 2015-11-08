@@ -37,7 +37,9 @@ $(document).ready(function() {
 	// Create map
 	var map = new L.Map('map', options);
 	map.on('moveend', function(e) {
-		// TODO: Enable autoload
+		// Load data
+		loadFeatures();
+
 		// Update location cookie
 		Cookies.set('location', {
 			center: map.getCenter(),
@@ -46,6 +48,7 @@ $(document).ready(function() {
 			expires: 365
 		});
 	});
+	loadFeatures();
 
 	// Add locate control
 	L.control.locate({
@@ -86,14 +89,43 @@ $(document).ready(function() {
 	});
 
 	// Starte Overpass request
+	var loadedBbox, loadingBbox;
+	var ajax;
 	function loadFeatures() {
-		var coords = map.getBounds();
-		var bbox = +coords.getSouthEast().lat+','+coords.getNorthWest().lng+','+coords.getNorthWest().lat+','+coords.getSouthEast().lng;
-		var request = '[out:json][timeout:25];(relation["type"="restriction"](' + bbox + ');node(r);way(bn)["highway"]["highway"~"^motorway|^trunk|^primary|^secondary|^tertiary|living_street|unclassified|residential|service|road"];);out body;>;out body;';
+		// Check zoom
+		if(map.getZoom() <= 14) {
+			return;
+		}
+
+		// Increase bbox so that we don't have to reload on small drags
+		var bbox = map.getBounds();
+		var bbox2 = bbox.pad(0.2);
+
+		// Check if already loaded
+		if(loadedBbox != undefined) {
+			if(loadedBbox.contains(bbox)) {
+				cancelLoading();
+				return;
+			}
+		}
+
+		// Check if loading
+		if(loadingBbox != undefined && loadingBbox) {
+			if(loadingBbox.contains(bbox)) {
+				return;
+			} else {
+				cancelLoading();
+			}
+		}
+
+		// Load
+		loadingBbox = bbox2;
+		var coords = bbox2.getSouthEast().lat+','+bbox2.getNorthWest().lng+','+bbox2.getNorthWest().lat+','+bbox2.getSouthEast().lng;
+		var request = '[out:json][timeout:25];(relation["type"="restriction"](' + coords + ');node(r);way(bn)["highway"]["highway"~"^motorway|^trunk|^primary|^secondary|^tertiary|living_street|unclassified|residential|service|road"];);out body;>;out body;';
 		console.log(request);
 		var url = 'http://overpass.osm.rambler.ru/cgi/interpreter?data=' + encodeURIComponent(request);
 
-		$.ajax({
+		ajax = $.ajax({
 			url: url,
 			type: 'GET',
 			crossDomain: true,
@@ -101,10 +133,23 @@ $(document).ready(function() {
 		});
 	}
 
+	function cancelLoading() {
+		if(ajax != undefined && ajax) {
+			ajax.abort();
+			ajax = null;
+		}
+		loadingBbox = null;
+	}
+
 	// Parse Overpass result
 	var nodes, ways, relations;
 	function parseOSM(data) {
 		console.log('Success');
+
+		// Update bboxes
+		ajax = null;
+		loadedBbox = loadingBbox;
+		loadingBbox = null;
 
 		nodes = [];
 		ways = [];
@@ -565,7 +610,7 @@ $(document).ready(function() {
 				var isFromMember = false;
 				var assocs = getRestrictionAssocs(way.id, via.restrictions);
 				for(var i = 0; i < assocs.length; i++) {
-					if(assocs[i].member.type == "from") {
+					if(assocs[i].member.type == 'from') {
 						isFromMember = true;
 						break;
 					}
@@ -588,7 +633,7 @@ $(document).ready(function() {
 			// Get to-members
 			var toMembers = [];
 			$.each(rel.members, function(none, member) {
-				if(member.type == "to") {
+				if(member.type == 'to') {
 					toMembers[member.way_ref] = true;
 				}
 			});
