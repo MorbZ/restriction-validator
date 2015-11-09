@@ -5,12 +5,15 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 		<link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
 		<link rel="stylesheet" href="lib/Font-Awesome/css/font-awesome.min.css">
+		<link rel="stylesheet" href="lib/Remodal/dist/remodal.css">
+		<link rel="stylesheet" href="lib/Remodal/dist/remodal-default-theme.css">
 		<link rel="stylesheet" href="lib/leaflet-0.7.5/leaflet.css" />
 		<link rel="stylesheet" href="lib/leaflet-locatecontrol/dist/L.Control.Locate.min.css" />
 		<link rel="stylesheet" href="styles.css" />
 		<script src="lib/jquery-1.11.1.min.js"></script>
 		<script src="lib/js.cookie-2.0.4.min.js"></script>
 		<script src="lib/spin.js/spin.min.js"></script>
+		<script src="lib/Remodal/dist/remodal.min.js"></script>
 		<script src="lib/leaflet-0.7.5/leaflet.js"></script>
 		<script src="lib/Leaflet.markercluster/dist/leaflet.markercluster-src.js"></script>
 		<script src="lib/Leaflet.PolylineDecorator/leaflet.polylineDecorator.js"></script>
@@ -20,6 +23,7 @@
 		<div class="header">
 			<span class="title">OSM Restriction Validator</span>
 			<div class="menu">
+				<a href="#modal">About</a>
 				<a href="https://github.com/MorbZ/restriction-validator" target="_blank">Github</a>
 			</div>
 		</div>
@@ -29,6 +33,15 @@
 				<div>Please zoom in to load data</div>
 			</div>
 			<div class="spinner" id="spinner"></div>
+		</div>
+		<div class="remodal" data-remodal-id="modal">
+			<button data-remodal-action="close" class="remodal-close"></button>
+			<p>
+				Shows <a href="http://www.openstreetmap.org/" target="_blank">OpenStreetMap</a> restrictions and analyses them to find incorrect or unnecessary <a href="http://wiki.openstreetmap.org/wiki/Relation:restriction" target="_blank">restrictions</a>. The <a href="http://wiki.openstreetmap.org/wiki/Overpass_API" target="_blank">Overpass API</a> is used to retrieve the data.
+			</p>
+			<p>
+				Green ways represent "only_"-restrictions, while red ways respresent "no_"-restrictions. White ways are connected to the via-node of some restriction, but not part of any restriction.
+			</p>
 		</div>
 		<script src="script.js"></script>
 	</body>

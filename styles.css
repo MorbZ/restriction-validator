@@ -33,6 +33,18 @@ div.menu > a {
 	font-size: 0.9em;
 }
 
+div.menu > a + a {
+	margin-left: 10px;
+}
+
+div.remodal a {
+	color: black;
+}
+
+div.remodal p {
+	text-align: justify;
+}
+
 div.map-container {
 	position: absolute;
 	top: 40px;
