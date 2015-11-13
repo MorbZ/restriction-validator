@@ -1,6 +1,8 @@
+<!DOCTYPE html>
 <html>
 	<head>
 		<title>Restriction Validator</title>
+		<meta charset="utf-8">
 		<meta name="description" content="Shows OpenStreetMap restrictions and analyses them to find incorrect or unnecessary restrictions.">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 		<link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
@@ -9,7 +11,7 @@
 		<link rel="stylesheet" href="lib/Remodal/dist/remodal-default-theme.min.css">
 		<link rel="stylesheet" href="lib/leaflet-0.7.5/leaflet.min.css" />
 		<link rel="stylesheet" href="lib/leaflet-locatecontrol/dist/L.Control.Locate.min.css" />
-		<link rel="stylesheet" href="dist/styles.min.css" />
+		<link rel="stylesheet" href="dist/styles.min.css?2" />
 		<script src="lib/jquery-1.11.1.min.js"></script>
 		<script src="lib/js.cookie-2.0.4.min.js"></script>
 		<script src="lib/spin.js/spin.min.js"></script>
@@ -34,7 +36,7 @@
 				<div>Please zoom in to load data</div>
 			</div>
 			<div class="spinner" id="spinner"></div>
-		</div>
+	</div>
 		<div class="remodal" data-remodal-id="modal">
 			<button data-remodal-action="close" class="remodal-close"></button>
 			<p>
