@@ -43,16 +43,8 @@ $(document).ready(function() {
 	}
 
 	/* Map */
-	// Restore location cookie
-	var options = Cookies.getJSON('location');
-	if(options == undefined) {
-		options = {
-			center: [52.45, 13.35],
-			zoom: 14
-		};
-	}
-
 	// Create map
+	var options = getOptions();
 	var map = new L.Map('map', options);
 	map.on('moveend', function() {
 		updateMap();
@@ -92,7 +84,42 @@ $(document).ready(function() {
 	}).addTo(map);
 	groups.push(markerGroup);
 
+	// Get map options for settings the default center and zoom
+	function getOptions() {
+		// Check for permalink
+		var url = window.location.href;
+		var pos = url.lastIndexOf('#');
+		if(pos != -1) {
+			url = url.substring(pos + 1);
+			var parts = url.split('/');
+			if(parts.length == 3) {
+				return {
+					center: [parts[1], parts[2]],
+					zoom: parts[0]
+				};
+			}
+		}
+
+		// Restore location cookie
+		var options = Cookies.getJSON('location');
+		if(options != undefined) {
+			return options;
+		}
+
+		// Default options
+		return {
+			center: [52.45, 13.35],
+			zoom: 14
+		};
+	}
+
 	function updateMap() {
+		// Update address bar for permalink
+		var center = map.getCenter();
+		var decimals = 5;
+		var locStr = '#' + map.getZoom() + '/' + center.lat.toFixed(decimals) + '/' + center.lng.toFixed(decimals);
+		window.history.replaceState({}, '', locStr);
+
 		// Update zoom hint
 		if(map.getZoom() < minLoadingZoom) {
 			$('.zoom-hint').show();
