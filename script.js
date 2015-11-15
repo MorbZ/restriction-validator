@@ -1,6 +1,8 @@
-/* Ignores:
-	- Restrcitons where the "via" member is a way
-	- Vehicle types, eg. "restriction:hgv"
+/*
+TODO:
+- Restrictions where the "via" member is a way
+- Vehicle types, eg. "restriction:hgv"
+- Non-car streets (e.g. cyclways)
 */
 
 $(document).ready(function() {
@@ -17,6 +19,20 @@ $(document).ready(function() {
 		'only_straight_on',
 		'no_entry',
 		'no_exit'
+	];
+
+	// Street types
+	var streetTypes = [
+		'^motorway',
+		'^trunk',
+		'^primary',
+		'^secondary',
+		'^tertiary',
+		'living_street',
+		'unclassified',
+		'residential',
+		'service',
+		'road'
 	];
 
 	// Colors
@@ -173,7 +189,7 @@ $(document).ready(function() {
 		startSpinner();
 		loadingBbox = bbox2;
 		var coords = bbox2.getSouthEast().lat+','+bbox2.getNorthWest().lng+','+bbox2.getNorthWest().lat+','+bbox2.getSouthEast().lng;
-		var request = '[out:json][timeout:25];(relation["type"="restriction"](' + coords + ');node(r);way(bn)["highway"]["highway"~"^motorway|^trunk|^primary|^secondary|^tertiary|living_street|unclassified|residential|service|road"];);out body;>;out body;';
+		var request = '[out:json][timeout:25];(relation["type"="restriction"](' + coords + ');node(r);way(bn)["highway"]["highway"~"' + streetTypes.join('|') + '"];);out body;>;out body;';
 		console.log(request);
 		var url = 'http://overpass.osm.rambler.ru/cgi/interpreter?data=' + encodeURIComponent(request);
 
@@ -274,6 +290,32 @@ $(document).ready(function() {
 				return;
 			}
 			via = via[0];
+
+			/* Check streets */
+			// Check street types
+			for(var i = 0; i < members.length; i++) {
+				var way = ways[members[i].way_ref];
+
+				// Has highway-tag?
+				if(way.tags.highway == undefined) {
+					showError([via.lat, via.lon], rel, 'There is a member way that has no "highway" tag', false);
+					return;
+				}
+				var highway = way.tags.highway;
+
+				// If we don't handle the street type we just ignore the restriction
+				var matches = false;
+				for(var j = 0; j < streetTypes.length; j++) {
+					var streetType = streetTypes[j];
+					if(highway.match(streetType)) {
+						matches = true;
+						break;
+					}
+				}
+				if(!matches) {
+					return;
+				}
+			}
 
 			/* Check restriction type */
 			// Check if tag exists
