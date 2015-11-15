@@ -704,8 +704,17 @@ $(document).ready(function() {
 		// Check if there are inaccessible ways
 		for(var i = 0; i < accessibles.length; i++) {
 			if(!accessibles[i].access) {
-				showError(via.via, via.via, 'The restrictions at this node make a street inaccessible. Consider using "oneway" or "access=no" instead of restrictions.', false);
-				return;
+				// Make text
+				var way = ways[accessibles[i].way_ref];
+				var text;
+				if(way.tags.name != undefined) {
+					var name = escapeHTML(way.tags.name);
+					text = 'The restrictions at this node make the street "' + name + '" inaccessible (can\'t be entered from any street that is connected to the via-node). This might indicate that using "oneway" or "access=no" may be more appropriate than using restrictions.';
+				} else {
+					text = 'The restrictions at this node make a street inaccessible (can\'t be entered from any street that is connected to the via-node). This might indicate that using "oneway" or "access=no" may be more appropriate than using restrictions.';
+				}
+
+				showError(via.via, via.via, text, true);
 			}
 		}
 	}
