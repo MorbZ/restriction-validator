@@ -653,7 +653,7 @@ $(document).ready(function() {
 			};
 
 			if(rel.access == 'only' && nAccess == rel.nTo) {
-				showError(via.via, relations[rel.id], 'Unnecessary restriction: There is no other turn possibility', true);
+				showError(via.via, relations[rel.id], 'Unnecessary restriction: There is no other turn possibility', true, '#66DE62');
 			}
 		});
 
@@ -719,7 +719,7 @@ $(document).ready(function() {
 		}
 	}
 
-	function showError(latlon, elem, msg, warning) {
+	function showError(latlon, elem, msg, warning, color) {
 		// Make link
 		var url = '';
 		var type = '';
@@ -739,8 +739,15 @@ $(document).ready(function() {
 		msg += '<br>' + type + ' <a href="' + url + '" target="_blank">' + elem.id + '</a>';
 		console.log(msg);
 
+		// Get color
+		var fillColor;
+		if(typeof color === 'undefined') {
+			fillColor = warning ? 'orange' : 'red';
+		} else {
+			fillColor = color;
+		}
+
 		// Add marker
-		var fillColor = warning ? 'orange' : 'red';
 		var marker = L.circleMarker(latlon, {
 			fillOpacity: 1,
 			opacity: 1,
