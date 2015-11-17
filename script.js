@@ -191,7 +191,7 @@ $(document).ready(function() {
 		var coords = bbox2.getSouthEast().lat+','+bbox2.getNorthWest().lng+','+bbox2.getNorthWest().lat+','+bbox2.getSouthEast().lng;
 		var request = '[out:json][timeout:25];(relation["type"="restriction"](' + coords + ');node(r);way(bn)["highway"]["highway"~"' + streetTypes.join('|') + '"];);out body;>;out body;';
 		console.log(request);
-		var url = 'http://overpass.osm.rambler.ru/cgi/interpreter?data=' + encodeURIComponent(request);
+		var url = 'http://overpass-api.de/api/interpreter?data=' + encodeURIComponent(request);
 
 		ajax = $.ajax({
 			url: url,
