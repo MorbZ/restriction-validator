@@ -74,8 +74,9 @@ $(document).ready(function() {
 	}).addTo(map);
 
 	// Add OSM layer
-	var osmUrl = 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-	var osmAttrib= 'Map data © <a href="http://openstreetmap.org">OpenStreetMap</a> contributors';
+	var osmUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+	var osmAttrib= 'Map data &copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors';
+	osmAttrib += ' | <a href="http://docs.morbz.de/impressum/impressum_osm.html" target="_blank">Imprint</a>';
 	var osm = new L.TileLayer(osmUrl, {minZoom: 1, maxZoom: 19, attribution: osmAttrib});
 	map.addLayer(osm);
 
@@ -191,7 +192,7 @@ $(document).ready(function() {
 		var coords = bbox2.getSouthEast().lat+','+bbox2.getNorthWest().lng+','+bbox2.getNorthWest().lat+','+bbox2.getSouthEast().lng;
 		var request = '[out:json][timeout:25];(relation["type"="restriction"](' + coords + ');node(r);way(bn)["highway"]["highway"~"' + streetTypes.join('|') + '"];);out body;>;out body;';
 		console.log(request);
-		var url = 'http://overpass-api.de/api/interpreter?data=' + encodeURIComponent(request);
+		var url = 'https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(request);
 
 		ajax = $.ajax({
 			url: url,
@@ -768,11 +769,11 @@ $(document).ready(function() {
 		switch(elem.type) {
 			case 'node':
 				type = 'Node';
-				url = 'http://www.openstreetmap.org/node/' + elem.id;
+				url = 'https://www.openstreetmap.org/node/' + elem.id;
 				break;
 			case 'relation':
 				type = 'Relation';
-				url = 'http://www.openstreetmap.org/relation/' + elem.id;
+				url = 'https://www.openstreetmap.org/relation/' + elem.id;
 				break;
 		}
 
