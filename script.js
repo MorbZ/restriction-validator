@@ -76,7 +76,7 @@ $(document).ready(function() {
 	// Add OSM layer
 	var osmUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 	var osmAttrib= 'Map data &copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors';
-	osmAttrib += ' | <a href="http://docs.morbz.de/impressum/impressum_osm.html" target="_blank">Imprint</a>';
+	osmAttrib += ' | <a href="http://docs.morbz.de/impressum/impressum_osm.html" target="_blank">Imprint</a> | <a href="http://docs.morbz.de/impressum/privacy_en.html" target="_blank">Privacy</a>';
 	var osm = new L.TileLayer(osmUrl, {minZoom: 1, maxZoom: 19, attribution: osmAttrib});
 	map.addLayer(osm);
 
