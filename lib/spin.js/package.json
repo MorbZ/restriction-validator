@@ -22,7 +22,7 @@
     }
   },
   "devDependencies": {
-    "eslint": "^1.5.1",
+    "eslint": "^7.11.0",
     "grunt": "~0.4.2",
     "grunt-bump": "0.0.13",
     "grunt-contrib-copy": "~0.5.0",
